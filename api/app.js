@@ -8,16 +8,19 @@ import staticRoutes from '../routes/static.route.js'
 const currentFilePath = fileURLToPath(import.meta.url)
 const currentDirectoryPath = path.dirname(currentFilePath);
 
-
 const app = express();
-
+console.log(currentDirectoryPath);
 app.use(express.json({limit:'16kb'}));
 app.use(express.urlencoded({extended:true,limit:'16kb'}));
 
-app.set('view engine',"ejs")
-app.set("views",path.resolve(currentDirectoryPath,'..','view','pages'))
+// Set view engine and views directory
+app.set('view engine', 'ejs');
+app.set('views', path.resolve(currentDirectoryPath, '..', 'view', 'pages'));
 
-app.use('/api',plannerRoute)
-app.use('/',staticRoutes)
+// Serve static files from the view/assets directory
+app.use('/assets', express.static(path.resolve(currentDirectoryPath, '..', 'view', 'assets')));
+
+app.use('/api', plannerRoute);
+app.use('/', staticRoutes);
 
 export default app;

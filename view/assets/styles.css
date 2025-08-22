@@ -1,0 +1,473 @@
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #533483 100%);
+    color: white;
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
+.container {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+/* Header styles */
+.header {
+    text-align: center;
+    padding: 40px 0;
+    z-index: 10;
+    position: relative;
+}
+
+.main-title {
+    font-size: 3.5rem;
+    font-weight: 700;
+    background: linear-gradient(45deg, #8b5cf6, #3b82f6, #6366f1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 15px;
+    text-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
+    animation: titleGlow 3s ease-in-out infinite alternate;
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    color: #a5b4fc;
+    font-weight: 300;
+    letter-spacing: 1px;
+}
+
+@keyframes titleGlow {
+    0% { filter: brightness(1) drop-shadow(0 0 20px rgba(139, 92, 246, 0.3)); }
+    100% { filter: brightness(1.2) drop-shadow(0 0 30px rgba(139, 92, 246, 0.6)); }
+}
+
+/* Globe section */
+.globe-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 60vh;
+    position: relative;
+    z-index: 5;
+}
+
+.globe-container {
+    text-align: center;
+    position: relative;
+}
+
+.globe {
+    width: 300px;
+    height: 300px;
+    margin: 0 auto 40px;
+    position: relative;
+    animation: globeFloat 6s ease-in-out infinite;
+}
+
+.globe-sphere {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.globe-image-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.globe-image {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    box-shadow: 
+        0 0 50px rgba(139, 92, 246, 0.6),
+        0 0 100px rgba(59, 130, 246, 0.4);
+    border: none;
+    transition: all 0.3s ease;
+    filter: contrast(1.1) brightness(1.05);
+    object-fit: cover;
+}
+
+.globe-image:hover {
+    transform: scale(1.05);
+    box-shadow: 
+        0 0 80px rgba(139, 92, 246, 0.8),
+        0 0 150px rgba(59, 130, 246, 0.6);
+}
+
+/* Tenor GIF Embed Styling */
+.tenor-gif-embed {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 
+        0 0 50px rgba(139, 92, 246, 0.6),
+        0 0 100px rgba(59, 130, 246, 0.4),
+        inset 0 0 50px rgba(0, 0, 0, 0.8);
+    border: 3px solid rgba(139, 92, 246, 0.8);
+    transition: all 0.3s ease;
+    filter: contrast(1.1) brightness(1.05);
+    background: transparent;
+}
+
+/* Remove any white background from Tenor iframe */
+.tenor-gif-embed iframe {
+    background: transparent !important;
+    border: none !important;
+}
+
+/* Ensure the embed container has no background */
+.tenor-gif-embed > * {
+    background: transparent !important;
+}
+
+.tenor-gif-embed:hover {
+    transform: scale(1.05);
+    box-shadow: 
+        0 0 80px rgba(139, 92, 246, 0.8),
+        0 0 150px rgba(59, 130, 246, 0.6);
+}
+
+/* Hide Tenor attribution text */
+.tenor-gif-embed a {
+    display: none;
+}
+
+/* Add subtle shadow under the globe */
+.globe::after {
+    display: none;
+}
+
+@keyframes globeFloat {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+}
+
+
+
+/* Get Started Button */
+.get-started-btn {
+    background: linear-gradient(45deg, #8b5cf6, #3b82f6);
+    color: white;
+    border: none;
+    padding: 15px 40px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 30px rgba(139, 92, 246, 0.4);
+    position: relative;
+    overflow: hidden;
+    z-index: 10;
+}
+
+.get-started-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 40px rgba(139, 92, 246, 0.6);
+    background: linear-gradient(45deg, #7c3aed, #2563eb);
+}
+
+.get-started-btn:active {
+    transform: translateY(-1px);
+}
+
+.get-started-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.get-started-btn:hover::before {
+    left: 100%;
+}
+
+/* Plane animation */
+.plane-container {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 100px;
+    pointer-events: none;
+    z-index: 15;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.plane {
+    font-size: 2rem;
+    position: absolute;
+    top: 0;
+    left: -50px;
+    transform: rotate(45deg);
+    filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.8));
+}
+
+.plane.flying {
+    animation: planeFly 4s ease-in-out forwards;
+}
+
+@keyframes planeFly {
+    0% {
+        left: -50px;
+        top: 0;
+        transform: rotate(45deg) scale(0.5);
+        opacity: 0;
+    }
+    20% {
+        opacity: 1;
+        transform: rotate(45deg) scale(1);
+    }
+    80% {
+        opacity: 1;
+        transform: rotate(45deg) scale(1);
+    }
+    100% {
+        left: calc(100% + 50px);
+        top: -50px;
+        transform: rotate(45deg) scale(0.5);
+        opacity: 0;
+    }
+}
+
+/* Monuments styling */
+.monuments-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.monument {
+    position: absolute;
+    width: 120px;
+    height: 90px;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    transition: all 0.3s ease;
+    opacity: 0.8;
+}
+
+.monument:hover {
+    transform: scale(1.1);
+    opacity: 1;
+    box-shadow: 0 15px 40px rgba(139, 92, 246, 0.4);
+}
+
+.monument img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: all 0.3s ease;
+}
+
+.monument-name {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+    color: white;
+    font-size: 0.7rem;
+    padding: 5px;
+    text-align: center;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.monument:hover .monument-name {
+    opacity: 1;
+}
+
+/* Left monuments */
+.left-monuments .monument {
+    left: 20px;
+}
+
+.left-1 { top: 20%; }
+.left-2 { top: 40%; }
+.left-3 { top: 60%; }
+
+/* Right monuments */
+.right-monuments .monument {
+    right: 20px;
+}
+
+.right-1 { top: 20%; }
+.right-2 { top: 40%; }
+.right-3 { top: 60%; }
+
+/* Bottom monuments */
+.bottom-monuments {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 20px;
+}
+
+.bottom-monuments .monument {
+    position: relative;
+    width: 100px;
+    height: 75px;
+}
+
+/* Particles for technical effect */
+.particles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: linear-gradient(45deg, #8b5cf6, #3b82f6);
+    border-radius: 50%;
+    animation: particleFloat 8s linear infinite;
+    opacity: 0.6;
+}
+
+.particle:nth-child(1) {
+    top: 20%;
+    left: 10%;
+    animation-delay: 0s;
+    animation-duration: 10s;
+}
+
+.particle:nth-child(2) {
+    top: 60%;
+    left: 15%;
+    animation-delay: 2s;
+    animation-duration: 12s;
+}
+
+.particle:nth-child(3) {
+    top: 30%;
+    right: 20%;
+    animation-delay: 4s;
+    animation-duration: 9s;
+}
+
+.particle:nth-child(4) {
+    top: 70%;
+    right: 15%;
+    animation-delay: 6s;
+    animation-duration: 11s;
+}
+
+.particle:nth-child(5) {
+    top: 50%;
+    left: 50%;
+    animation-delay: 1s;
+    animation-duration: 13s;
+}
+
+.particle:nth-child(6) {
+    top: 80%;
+    left: 30%;
+    animation-delay: 3s;
+    animation-duration: 8s;
+}
+
+@keyframes particleFloat {
+    0% {
+        transform: translateY(0px) translateX(0px);
+        opacity: 0;
+    }
+    10% {
+        opacity: 0.6;
+    }
+    90% {
+        opacity: 0.6;
+    }
+    100% {
+        transform: translateY(-100px) translateX(50px);
+        opacity: 0;
+    }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .main-title {
+        font-size: 2.5rem;
+    }
+    
+    .globe {
+        width: 250px;
+        height: 250px;
+    }
+    
+    .monument {
+        width: 80px;
+        height: 60px;
+    }
+    
+    .bottom-monuments .monument {
+        width: 70px;
+        height: 50px;
+    }
+    
+    .left-monuments .monument,
+    .right-monuments .monument {
+        width: 80px;
+        height: 60px;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-title {
+        font-size: 2rem;
+    }
+    
+    .globe {
+        width: 200px;
+        height: 200px;
+    }
+    
+    .monument {
+        width: 60px;
+        height: 45px;
+    }
+    
+    .bottom-monuments .monument {
+        width: 50px;
+        height: 35px;
+    }
+    
+    .left-monuments .monument,
+    .right-monuments .monument {
+        width: 60px;
+        height: 45px;
+    }
+}
