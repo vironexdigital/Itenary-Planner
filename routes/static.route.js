@@ -6,7 +6,7 @@ route.get('/',async(req,res)=>{
     res.render('index')
 })
 
-route.get('/plan',async(req,res)=>{
+route.get('/planning',async(req,res)=>{
     res.render('PlanningPage')
 })
 

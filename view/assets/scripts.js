@@ -1,82 +1,285 @@
-// Wait for DOM to be fully loaded
+// AI-Advanced Interface System
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Neural Network Canvas
+    initNeuralNetwork();
+    
     // Get references to DOM elements
     const getStartedBtn = document.getElementById('getStartedBtn');
     const planeContainer = document.getElementById('planeContainer');
     const plane = document.getElementById('plane');
+    const controlIndicators = document.querySelectorAll('.control-indicator');
+    const monumentCards = document.querySelectorAll('.monument-card');
     
-    // Add click event listener to the Get Started button
-    getStartedBtn.addEventListener('click', function() {
-        // Trigger plane animation
-        animatePlane();
+    // Neural Network Animation
+    function initNeuralNetwork() {
+        const canvas = document.getElementById('neuralCanvas');
+        const ctx = canvas.getContext('2d');
         
-        // Add a subtle button effect
+        // Set canvas size
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Neural network nodes and connections
+        const nodes = [];
+        const connections = [];
+        const nodeCount = 15;
+        const connectionCount = 25;
+        
+        // Create nodes
+        for (let i = 0; i < nodeCount; i++) {
+            nodes.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                vx: (Math.random() - 0.5) * 0.5,
+                vy: (Math.random() - 0.5) * 0.5,
+                size: Math.random() * 3 + 1,
+                pulse: Math.random() * Math.PI * 2
+            });
+        }
+        
+        // Create connections
+        for (let i = 0; i < connectionCount; i++) {
+            connections.push({
+                from: Math.floor(Math.random() * nodeCount),
+                to: Math.floor(Math.random() * nodeCount),
+                strength: Math.random() * 0.5 + 0.1
+            });
+        }
+        
+        // Animation loop
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Update nodes
+            nodes.forEach(node => {
+                node.x += node.vx;
+                node.y += node.vy;
+                node.pulse += 0.05;
+                
+                // Bounce off edges
+                if (node.x < 0 || node.x > canvas.width) node.vx *= -1;
+                if (node.y < 0 || node.y > canvas.height) node.vy *= -1;
+                
+                // Draw nodes
+                const alpha = 0.3 + 0.4 * Math.sin(node.pulse);
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, node.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(0, 255, 255, ${alpha})`;
+                ctx.fill();
+                
+                // Node glow
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, node.size * 2, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(0, 255, 255, ${alpha * 0.3})`;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            });
+            
+            // Draw connections
+            connections.forEach(conn => {
+                const from = nodes[conn.from];
+                const to = nodes[conn.to];
+                const distance = Math.sqrt((from.x - to.x) ** 2 + (from.y - to.y) ** 2);
+                
+                if (distance < 200) {
+                    const alpha = (1 - distance / 200) * conn.strength;
+                    ctx.beginPath();
+                    ctx.moveTo(from.x, from.y);
+                    ctx.lineTo(to.x, to.y);
+                    ctx.strokeStyle = `rgba(0, 255, 255, ${alpha})`;
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+            });
+            
+            requestAnimationFrame(animate);
+        }
+        
+        animate();
+    }
+    
+    // AI Activate Button with enhanced effects
+    getStartedBtn.addEventListener('click', function() {
+        // Trigger AI activation sequence
+        activateAI();
+        
+        // Button press effect
         this.style.transform = 'scale(0.95)';
         setTimeout(() => {
             this.style.transform = 'scale(1)';
         }, 150);
     });
     
-    // Function to animate the plane
-    function animatePlane() {
-        // Show the plane container
-        planeContainer.style.opacity = '1';
+    // AI Activation Sequence
+    function activateAI() {
+        // Activate control indicators
+        controlIndicators.forEach((indicator, index) => {
+            setTimeout(() => {
+                indicator.classList.add('active');
+            }, index * 500);
+        });
         
-        // Add flying class to trigger CSS animation
+        // Trigger flight animation
+        setTimeout(() => {
+            animateAICraft();
+        }, 1500);
+        
+        // Update status values
+        updateStatusValues();
+        
+        // Redirect to PlanningPage after all animations complete
+        setTimeout(() => {
+            window.location.href = '/planning';
+        }, 6000); // Total time for all animations: 1.5s + 4s flight + 0.5s buffer
+    }
+    
+    // Enhanced AI Craft Animation
+    function animateAICraft() {
+        planeContainer.style.opacity = '1';
         plane.classList.add('flying');
         
-        // Reset animation after completion
+        // Add trajectory effects
+        const trajectory = document.querySelector('.trajectory-line');
+        trajectory.style.animation = 'trajectoryGlow 2s ease-in-out infinite';
+        
         setTimeout(() => {
             plane.classList.remove('flying');
             planeContainer.style.opacity = '0';
-        }, 4000); // Match the CSS animation duration
+            trajectory.style.animation = '';
+        }, 4000);
     }
     
-    // Add some interactive effects to monuments
-    const monuments = document.querySelectorAll('.monument');
-    
-    monuments.forEach(monument => {
-        // Add subtle hover animations
-        monument.addEventListener('mouseenter', function() {
-            this.style.transform = 'scale(1.1) rotate(2deg)';
-        });
+    // Update Status Values
+    function updateStatusValues() {
+        const statusValues = document.querySelectorAll('.status-value');
+        const values = ['ONLINE', 'ACTIVE', 'SYNCED'];
         
-        monument.addEventListener('mouseleave', function() {
-            this.style.transform = 'scale(1) rotate(0deg)';
-        });
-        
-        // Add click effect for monuments
-        monument.addEventListener('click', function() {
-            // Create a ripple effect
-            const ripple = document.createElement('div');
-            ripple.style.position = 'absolute';
-            ripple.style.width = '20px';
-            ripple.style.height = '20px';
-            ripple.style.background = 'rgba(139, 92, 246, 0.6)';
-            ripple.style.borderRadius = '50%';
-            ripple.style.pointerEvents = 'none';
-            ripple.style.animation = 'ripple 0.6s linear';
-            
-            // Position ripple at click point
-            const rect = this.getBoundingClientRect();
-            ripple.style.left = '50%';
-            ripple.style.top = '50%';
-            ripple.style.transform = 'translate(-50%, -50%)';
-            
-            this.appendChild(ripple);
-            
-            // Remove ripple after animation
+        statusValues.forEach((value, index) => {
             setTimeout(() => {
-                if (ripple.parentNode) {
-                    ripple.parentNode.removeChild(ripple);
+                value.textContent = values[index];
+                value.style.animation = 'statusBlink 3s ease-in-out infinite';
+            }, index * 800);
+        });
+    }
+    
+    // Enhanced Monument Card Interactions
+    monumentCards.forEach(card => {
+        // Hover effects
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-10px) scale(1.05)';
+            
+            // Add scanning effect
+            const scanLine = document.createElement('div');
+            scanLine.style.position = 'absolute';
+            scanLine.style.top = '0';
+            scanLine.style.left = '0';
+            scanLine.style.width = '100%';
+            scanLine.style.height = '2px';
+            scanLine.style.background = 'linear-gradient(90deg, transparent, #00ffff, transparent)';
+            scanLine.style.animation = 'scanLine 1s ease-in-out';
+            scanLine.style.zIndex = '10';
+            
+            this.appendChild(scanLine);
+            
+            setTimeout(() => {
+                if (scanLine.parentNode) {
+                    scanLine.parentNode.removeChild(scanLine);
                 }
-            }, 600);
+            }, 1000);
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+        });
+        
+        // Click effects with data visualization
+        card.addEventListener('click', function() {
+            const location = this.dataset.location;
+            
+            // Create data popup
+            const popup = document.createElement('div');
+            popup.style.position = 'fixed';
+            popup.style.top = '50%';
+            popup.style.left = '50%';
+            popup.style.transform = 'translate(-50%, -50%)';
+            popup.style.background = 'rgba(0, 0, 0, 0.9)';
+            popup.style.border = '1px solid #00ffff';
+            popup.style.borderRadius = '15px';
+            popup.style.padding = '30px';
+            popup.style.color = '#00ffff';
+            popup.style.fontFamily = 'Orbitron, monospace';
+            popup.style.zIndex = '1000';
+            popup.style.backdropFilter = 'blur(10px)';
+            popup.style.animation = 'fadeIn 0.3s ease-in-out';
+            
+            popup.innerHTML = `
+                <h3 style="margin-bottom: 15px; color: #00ffff;">${location.replace('-', ' ').toUpperCase()}</h3>
+                <div style="margin-bottom: 10px;">
+                    <span style="color: #80ffff;">AI Analysis:</span>
+                    <span style="color: #00ffff;">Processing...</span>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <span style="color: #80ffff;">Optimal Route:</span>
+                    <span style="color: #00ffff;">Calculating...</span>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <span style="color: #80ffff;">Travel Time:</span>
+                    <span style="color: #00ffff;">Estimating...</span>
+                </div>
+                <button onclick="this.parentElement.remove()" style="
+                    background: linear-gradient(45deg, #00ffff, #0080ff);
+                    color: #000;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 25px;
+                    cursor: pointer;
+                    font-family: 'Orbitron', monospace;
+                    font-weight: 600;
+                ">CLOSE</button>
+            `;
+            
+            document.body.appendChild(popup);
+            
+            // Simulate AI processing
+            setTimeout(() => {
+                const analysis = popup.querySelector('span:nth-child(2)');
+                analysis.textContent = 'Complete';
+                analysis.style.color = '#00ff00';
+            }, 1000);
+            
+            setTimeout(() => {
+                const route = popup.querySelector('span:nth-child(4)');
+                route.textContent = 'Optimized';
+                route.style.color = '#00ff00';
+            }, 2000);
+            
+            setTimeout(() => {
+                const time = popup.querySelector('span:nth-child(6)');
+                time.textContent = '12h 34m';
+                time.style.color = '#00ff00';
+            }, 3000);
         });
     });
     
-    // Add CSS for ripple effect
+    // Add CSS for new animations
     const style = document.createElement('style');
     style.textContent = `
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+        
+        @keyframes scanLine {
+            0% { top: 0; opacity: 0; }
+            50% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+        
         @keyframes ripple {
             0% {
                 transform: translate(-50%, -50%) scale(0);
@@ -90,58 +293,30 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     document.head.appendChild(style);
     
-    // Add parallax effect to particles on mouse move
+    // Parallax effect for particles
     document.addEventListener('mousemove', function(e) {
-        const particles = document.querySelectorAll('.particle');
+        const particleClusters = document.querySelectorAll('.particle-cluster');
         const mouseX = e.clientX / window.innerWidth;
         const mouseY = e.clientY / window.innerHeight;
         
-        particles.forEach((particle, index) => {
-            const speed = (index + 1) * 0.5;
+        particleClusters.forEach((cluster, index) => {
+            const speed = (index + 1) * 0.3;
             const x = (mouseX - 0.5) * speed;
             const y = (mouseY - 0.5) * speed;
             
-            particle.style.transform = `translate(${x}px, ${y}px)`;
+            cluster.style.transform = `translate(${x}px, ${y}px)`;
         });
     });
     
-    // Add smooth scroll effect for better UX
-    getStartedBtn.addEventListener('click', function() {
-        // Smooth scroll to a section if needed
-        const globeSection = document.querySelector('.globe-section');
-        if (globeSection) {
-            globeSection.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center'
-            });
-        }
-    });
-    
-    // Add loading animation for better performance
-    window.addEventListener('load', function() {
-        // Add fade-in effect to all elements
-        const elements = document.querySelectorAll('.header, .globe-section, .monuments-container');
-        elements.forEach((element, index) => {
-            element.style.opacity = '0';
-            element.style.transform = 'translateY(20px)';
-            element.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-            
-            setTimeout(() => {
-                element.style.opacity = '1';
-                element.style.transform = 'translateY(0)';
-            }, index * 200);
-        });
-    });
-    
-    // Add keyboard navigation support
+    // Keyboard navigation
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' || e.key === ' ') {
-            // Trigger plane animation on Enter or Space
-            animatePlane();
+            e.preventDefault();
+            activateAI();
         }
     });
     
-    // Add touch support for mobile devices
+    // Touch support for mobile
     let touchStartY = 0;
     let touchEndY = 0;
     
@@ -160,9 +335,37 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (Math.abs(diff) > swipeThreshold) {
             if (diff > 0) {
-                // Swipe up - could trigger plane animation
-                animatePlane();
+                activateAI();
             }
         }
     }
+    
+    // Loading animation
+    window.addEventListener('load', function() {
+        const elements = document.querySelectorAll('.ai-header, .ai-globe-section, .ai-data-viz, .ai-monuments');
+        elements.forEach((element, index) => {
+            element.style.opacity = '0';
+            element.style.transform = 'translateY(30px)';
+            element.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+            
+            setTimeout(() => {
+                element.style.opacity = '1';
+                element.style.transform = 'translateY(0)';
+            }, index * 200);
+        });
+    });
+    
+    // Real-time data updates
+    setInterval(() => {
+        const streamValues = document.querySelectorAll('.stream-value');
+        const values = ['Neural Analysis', 'Route Calculation', 'Travel Patterns', 'Data Processing', 'AI Optimization'];
+        
+        streamValues.forEach((value, index) => {
+            if (Math.random() > 0.7) {
+                const randomValue = values[Math.floor(Math.random() * values.length)];
+                value.textContent = randomValue;
+                value.style.animation = 'streamUpdate 0.5s ease-in-out';
+            }
+        });
+    }, 3000);
 });

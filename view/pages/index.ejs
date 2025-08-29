@@ -3,101 +3,246 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Itinerary Planner</title>
+    <title>AI-Powered Global Itinerary Planner</title>
     <link rel="stylesheet" href="/assets/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <!-- Top section with title -->
-        <header class="header">
-            <h1 class="main-title">Global Itinerary Planner</h1>
-            <p class="subtitle">Explore the world, one destination at a time</p>
+    <div class="ai-container">
+        <!-- Neural Network Background -->
+        <div class="neural-network">
+            <canvas id="neuralCanvas"></canvas>
+        </div>
+
+        <!-- AI Header Section -->
+        <header class="ai-header">
+            <div class="ai-logo">
+                <div class="logo-circle">
+                    <div class="logo-inner">
+                        <span class="ai-text">AI</span>
+                    </div>
+                </div>
+            </div>
+            <div class="header-content">
+                <h1 class="ai-title">
+                    <span class="title-line">AI-POWERED</span>
+                    <span class="title-line">GLOBAL ITINERARY</span>
+                    <span class="title-line">PLANNER</span>
+                </h1>
+                <div class="ai-subtitle">
+                    <span class="subtitle-text">Advanced Neural Network</span>
+                    <span class="subtitle-separator">•</span>
+                    <span class="subtitle-text">Machine Learning</span>
+                    <span class="subtitle-separator">•</span>
+                    <span class="subtitle-text">Predictive Analytics</span>
+                </div>
+            </div>
         </header>
 
-        <!-- Center globe section -->
-        <main class="globe-section">
-            <div class="globe-container">
-                <div class="globe">
-                    <div class="globe-sphere">
-                        <div class="globe-image-container">
-                            <img src="/assets/globe.gif" alt="3D Rotating Earth" class="globe-image">
+        <!-- AI Globe Interface -->
+        <main class="ai-globe-section">
+            <div class="globe-interface">
+                <div class="globe-hologram">
+                    <div class="hologram-container">
+                        <div class="hologram-sphere">
+                            <img src="/assets/globe.gif" alt="AI Earth Interface" class="hologram-image">
+                            <div class="hologram-overlay"></div>
+                            <div class="scan-line"></div>
+                        </div>
+                        <div class="hologram-rings">
+                            <div class="ring ring-1"></div>
+                            <div class="ring ring-2"></div>
+                            <div class="ring ring-3"></div>
                         </div>
                     </div>
                 </div>
-                <button class="get-started-btn" id="getStartedBtn">Get Started</button>
+                
+                <div class="ai-controls">
+                    <div class="control-panel">
+                        <div class="control-item">
+                            <div class="control-indicator active"></div>
+                            <span class="control-label">AI Status</span>
+                        </div>
+                        <div class="control-item">
+                            <div class="control-indicator"></div>
+                            <span class="control-label">Neural Core</span>
+                        </div>
+                        <div class="control-item">
+                            <div class="control-indicator"></div>
+                            <span class="control-label">Data Sync</span>
+                        </div>
+                    </div>
+                    
+                    <button class="ai-activate-btn" id="getStartedBtn">
+                        <span class="btn-text">ACTIVATE AI PLANNER</span>
+                        <div class="btn-particles">
+                            <div class="particle"></div>
+                            <div class="particle"></div>
+                            <div class="particle"></div>
+                        </div>
+                    </button>
+                </div>
             </div>
         </main>
 
-        <!-- Animated plane -->
-        <div class="plane-container" id="planeContainer">
-            <div class="plane" id="plane">
-                ✈️
-            </div>
-        </div>
-
-        <!-- World monuments around the borders -->
-        <div class="monuments-container">
-            <!-- Left monuments -->
-            <div class="left-monuments">
-                <div class="monument left-1">
-                    <img src="https://images.unsplash.com/photo-1548013146-72492268e740?w=200&h=150&fit=crop" alt="Taj Mahal">
-                    <span class="monument-name">Taj Mahal</span>
+        <!-- AI Data Visualization -->
+        <div class="ai-data-viz">
+            <div class="data-panel left-panel">
+                <div class="panel-header">
+                    <h3>GLOBAL METRICS</h3>
+                    <div class="panel-indicator"></div>
                 </div>
-                <div class="monument left-2">
-                    <img src="https://images.unsplash.com/photo-1502602898534-8610c9d4a8a3?w=200&h=150&fit=crop" alt="Eiffel Tower">
-                    <span class="monument-name">Eiffel Tower</span>
-                </div>
-                <div class="monument left-3">
-                    <img src="https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=200&h=150&fit=crop" alt="Big Ben">
-                    <span class="monument-name">Big Ben</span>
+                <div class="metric-grid">
+                    <div class="metric-item">
+                        <div class="metric-value">2.3M+</div>
+                        <div class="metric-label">Destinations</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value">98.7%</div>
+                        <div class="metric-label">Accuracy</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value">15.2K</div>
+                        <div class="metric-label">AI Models</div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Right monuments -->
-            <div class="right-monuments">
-                <div class="monument right-1">
-                    <img src="https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=200&h=150&fit=crop" alt="Statue of Liberty">
-                    <span class="monument-name">Statue of Liberty</span>
+            <div class="data-panel right-panel">
+                <div class="panel-header">
+                    <h3>REAL-TIME DATA</h3>
+                    <div class="panel-indicator"></div>
                 </div>
-                <div class="monument right-2">
-                    <img src="https://images.unsplash.com/photo-1546445317-29d911b4c6c5?w=200&h=150&fit=crop" alt="Sydney Opera House">
-                    <span class="monument-name">Sydney Opera House</span>
-                </div>
-                <div class="monument right-3">
-                    <img src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=200&h=150&fit=crop" alt="Christ the Redeemer">
-                    <span class="monument-name">Christ the Redeemer</span>
-                </div>
-            </div>
-
-            <!-- Bottom monuments -->
-            <div class="bottom-monuments">
-                <div class="monument bottom-1">
-                    <img src="https://images.unsplash.com/photo-1552083375-1447ce886485?w=200&h=150&fit=crop" alt="Machu Picchu">
-                    <span class="monument-name">Machu Picchu</span>
-                </div>
-                <div class="monument bottom-2">
-                    <img src="https://images.unsplash.com/photo-1565967511849-76a60a516170?w=200&h=150&fit=crop" alt="Great Wall">
-                    <span class="monument-name">Great Wall</span>
-                </div>
-                <div class="monument bottom-3">
-                    <img src="https://images.unsplash.com/photo-1543857778-c4a1a3e0b2eb?w=200&h=150&fit=crop" alt="Pyramids">
-                    <span class="monument-name">Pyramids</span>
-                </div>
-                <div class="monument bottom-4">
-                    <img src="https://images.unsplash.com/photo-1528181304800-259b08848526?w=200&h=150&fit=crop" alt="Petra">
-                    <span class="monument-name">Petra</span>
+                <div class="data-stream">
+                    <div class="stream-item">
+                        <span class="stream-label">Processing:</span>
+                        <span class="stream-value">Neural Analysis</span>
+                    </div>
+                    <div class="stream-item">
+                        <span class="stream-label">Optimization:</span>
+                        <span class="stream-value">Route Calculation</span>
+                    </div>
+                    <div class="stream-item">
+                        <span class="stream-label">Prediction:</span>
+                        <span class="stream-value">Travel Patterns</span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Floating particles for technical effect -->
-        <div class="particles">
-            <div class="particle"></div>
-            <div class="particle"></div>
-            <div class="particle"></div>
-            <div class="particle"></div>
-            <div class="particle"></div>
-            <div class="particle"></div>
+        <!-- AI Monuments Grid -->
+        <div class="ai-monuments">
+            <div class="monuments-grid">
+                <div class="monument-card" data-location="taj-mahal">
+                    <div class="card-hologram">
+                        <img src="https://i.pinimg.com/1200x/a3/4c/f1/a34cf148b2965ad678d444e16aed0bbc.jpg" alt="Taj Mahal">
+                        <div class="card-overlay">
+                            <div class="location-data">
+                                <span class="location-name">Taj Mahal</span>
+                                <span class="location-coords">27.1751°N, 78.0421°E</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="monument-card" data-location="eiffel-tower">
+                    <div class="card-hologram">
+                        <img src="https://i.pinimg.com/1200x/f2/9b/78/f29b7869b3cacfaa0eb3067f9bfbbb90.jpg" alt="Eiffel Tower">
+                        <div class="card-overlay">
+                            <div class="location-data">
+                                <span class="location-name">Eiffel Tower</span>
+                                <span class="location-coords">48.8584°N, 2.2945°E</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="monument-card" data-location="big-ben">
+                    <div class="card-hologram">
+                        <img src="https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=200&h=150&fit=crop" alt="Big Ben">
+                        <div class="card-overlay">
+                            <div class="location-data">
+                                <span class="location-name">Big Ben</span>
+                                <span class="location-coords">51.4994°N, 0.1245°W</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="monument-card" data-location="statue-liberty">
+                    <div class="card-hologram">
+                        <img src="https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=200&h=150&fit=crop" alt="Statue of Liberty">
+                        <div class="card-overlay">
+                            <div class="location-data">
+                                <span class="location-name">Statue of Liberty</span>
+                                <span class="location-coords">40.6892°N, 74.0445°W</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="monument-card" data-location="sydney-opera">
+                    <div class="card-hologram">
+                        <img src="https://i.pinimg.com/736x/a0/7c/45/a07c454992c7ce9a2dd7bd2e60d23efd.jpg" alt="Sydney Opera House">
+                        <div class="card-overlay">
+                            <div class="location-data">
+                                <span class="location-name">Sydney Opera House</span>
+                                <span class="location-coords">33.8568°S, 151.2153°E</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="monument-card" data-location="christ-redeemer">
+                    <div class="card-hologram">
+                        <img src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=200&h=150&fit=crop" alt="Christ the Redeemer">
+                        <div class="card-overlay">
+                            <div class="location-data">
+                                <span class="location-name">Christ the Redeemer</span>
+                                <span class="location-coords">22.9519°S, 43.2105°W</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Flight Path -->
+        <div class="ai-flight-path" id="planeContainer">
+            <div class="flight-trajectory">
+                <div class="trajectory-line"></div>
+                <div class="ai-craft" id="plane">
+                    <div class="craft-body">
+                        <div class="craft-wings"></div>
+                        <div class="craft-engine"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Particles System -->
+        <div class="ai-particles">
+            <div class="particle-field">
+                <div class="particle-cluster cluster-1"></div>
+                <div class="particle-cluster cluster-2"></div>
+                <div class="particle-cluster cluster-3"></div>
+            </div>
+        </div>
+
+        <!-- AI Status Bar -->
+        <div class="ai-status-bar">
+            <div class="status-item">
+                <span class="status-label">AI Core:</span>
+                <span class="status-value">ONLINE</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Neural Network:</span>
+                <span class="status-value">ACTIVE</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Global Data:</span>
+                <span class="status-value">SYNCED</span>
+            </div>
         </div>
     </div>
 
