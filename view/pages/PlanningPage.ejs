@@ -571,6 +571,19 @@
                 this.synthesis = window.speechSynthesis;
                 this.currentText = '';
                 
+                // Final input variable to store user input from any source
+                this.finalUserInput = '';
+                
+                // Trip credentials object to store required information
+                this.tripCredentials = {
+                    origin: '',
+                    destination: '',
+                    startDate: '',
+                    endDate: '',
+                    numberOfDays: '',
+                    isComplete: false
+                };
+                
                 // Audio analysis properties
                 this.audioContext = null;
                 this.analyser = null;
@@ -590,9 +603,329 @@
                 this.ttsData = null;
                 this.ttsInterval = null;
                 
+                // Loading sequence properties
+                this.loadingInterval = null;
+                
                 this.initializeSpeechRecognition();
                 this.initializeEventListeners();
                 this.initializeWaveformVisualizer();
+            }
+
+            // Method to validate trip credentials
+            validateTripCredentials() {
+                const hasOrigin = this.tripCredentials.origin.trim() !== '';
+                const hasDestination = this.tripCredentials.destination.trim() !== '';
+                const hasStartDate = this.tripCredentials.startDate.trim() !== '';
+                const hasEndDate = this.tripCredentials.endDate.trim() !== '';
+                const hasNumberOfDays = this.tripCredentials.numberOfDays.trim() !== '';
+                
+                // Must have origin, destination, start date, and either end date OR number of days
+                const isValid = hasOrigin && hasDestination && hasStartDate && (hasEndDate || hasNumberOfDays);
+                
+                this.tripCredentials.isComplete = isValid;
+                return isValid;
+            }
+
+            // Method to get missing credentials
+            getMissingCredentials() {
+                const missing = [];
+                if (!this.tripCredentials.origin.trim()) missing.push('origin');
+                if (!this.tripCredentials.destination.trim()) missing.push('destination');
+                if (!this.tripCredentials.startDate.trim()) missing.push('start date');
+                if (!this.tripCredentials.endDate.trim() && !this.tripCredentials.numberOfDays.trim()) {
+                    missing.push('end date or number of days');
+                }
+                return missing;
+            }
+
+            // Method to generate AI prompt from trip credentials
+            generateAIPrompt() {
+                if (!this.validateTripCredentials()) {
+                    return null;
+                }
+
+                let prompt = `Plan a Trip from ${this.tripCredentials.origin} to ${this.tripCredentials.destination} starting ${this.tripCredentials.startDate}`;
+                
+                if (this.tripCredentials.endDate) {
+                    prompt += ` ending ${this.tripCredentials.endDate}`;
+                } else if (this.tripCredentials.numberOfDays) {
+                    prompt += ` for ${this.tripCredentials.numberOfDays} days`;
+                }
+                
+                return prompt;
+            }
+
+            // Method to ask for missing credentials
+            askForMissingCredentials() {
+                const missing = this.getMissingCredentials();
+                if (missing.length === 0) return;
+
+                let message = "I need some more information to create your itinerary. Please provide: ";
+                message += missing.join(', ') + '.';
+                
+                this.addChatMessage('agent', message);
+                this.speakText(message);
+            }
+
+            // Method to extract trip information from user input
+            extractTripInfo(inputText) {
+                const text = inputText.toLowerCase();
+                let extracted = false;
+
+                // Extract origin
+                const originPatterns = [
+                    /from\s+([^,\n]+?)(?:\s+to|\s+on|\s+starting|\s+beginning|$)/i,
+                    /origin[:\s]+([^,\n]+?)(?:\s+to|\s+on|\s+starting|\s+beginning|$)/i,
+                    /starting\s+from\s+([^,\n]+?)(?:\s+to|\s+on|\s+starting|\s+beginning|$)/i
+                ];
+                
+                for (let pattern of originPatterns) {
+                    const match = text.match(pattern);
+                    if (match && !this.tripCredentials.origin) {
+                        this.tripCredentials.origin = match[1].trim();
+                        extracted = true;
+                        break;
+                    }
+                }
+
+                // Extract destination
+                const destPatterns = [
+                    /to\s+([^,\n]+?)(?:\s+on|\s+from|\s+starting|\s+beginning|$)/i,
+                    /destination[:\s]+([^,\n]+?)(?:\s+on|\s+from|\s+starting|\s+beginning|$)/i,
+                    /going\s+to\s+([^,\n]+?)(?:\s+on|\s+from|\s+starting|\s+beginning|$)/i
+                ];
+                
+                for (let pattern of destPatterns) {
+                    const match = text.match(pattern);
+                    if (match && !this.tripCredentials.destination) {
+                        this.tripCredentials.destination = match[1].trim();
+                        extracted = true;
+                        break;
+                    }
+                }
+
+                // Extract dates - handle various formats including ordinal dates
+                const datePatterns = [
+                    /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/g,
+                    /(\d{1,2}(?:st|nd|rd|th)?\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{2,4})/gi,
+                    /(\d{1,2}(?:st|nd|rd|th)?\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{2,4})/gi,
+                    /(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{2,4}/gi,
+                    /(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{2,4}/gi,
+                    // Handle dates without year (assume current year)
+                    /(\d{1,2}(?:st|nd|rd|th)?\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*)/gi,
+                    /(\d{1,2}(?:st|nd|rd|th)?\s+(?:january|february|march|april|may|june|july|august|september|october|november|december))/gi,
+                    /(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2}(?:st|nd|rd|th)?/gi,
+                    /(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{1,2}(?:st|nd|rd|th)?/gi,
+                    // Handle "on" prefix
+                    /on\s+(\d{1,2}(?:st|nd|rd|th)?\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*)/gi,
+                    /on\s+(\d{1,2}(?:st|nd|rd|th)?\s+(?:january|february|march|april|may|june|july|august|september|october|november|december))/gi,
+                    /on\s+(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2}(?:st|nd|rd|th)?/gi,
+                    /on\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{1,2}(?:st|nd|rd|th)?/gi
+                ];
+                
+                for (let pattern of datePatterns) {
+                    const matches = text.match(pattern);
+                    if (matches) {
+                        if (!this.tripCredentials.startDate) {
+                            let dateStr = matches[0];
+                            // If no year is specified, add current year
+                            if (!dateStr.match(/\d{4}/)) {
+                                const currentYear = new Date().getFullYear();
+                                dateStr += ` ${currentYear}`;
+                            }
+                            this.tripCredentials.startDate = dateStr;
+                            extracted = true;
+                        } else if (!this.tripCredentials.endDate && matches.length > 1) {
+                            let dateStr = matches[1];
+                            // If no year is specified, add current year
+                            if (!dateStr.match(/\d{4}/)) {
+                                const currentYear = new Date().getFullYear();
+                                dateStr += ` ${currentYear}`;
+                            }
+                            this.tripCredentials.endDate = dateStr;
+                            extracted = true;
+                        }
+                    }
+                }
+
+                // Extract number of days
+                const daysPatterns = [
+                    /(\d+)\s+days?/i,
+                    /for\s+(\d+)\s+days?/i,
+                    /duration[:\s]+(\d+)\s+days?/i
+                ];
+                
+                for (let pattern of daysPatterns) {
+                    const match = text.match(pattern);
+                    if (match && !this.tripCredentials.numberOfDays) {
+                        this.tripCredentials.numberOfDays = match[1];
+                        extracted = true;
+                        break;
+                    }
+                }
+
+                return extracted;
+            }
+
+            // Method to show loading sequence
+            showLoadingSequence() {
+                const loadingMessages = [
+                    "🔍 Finding the best flights...",
+                    "🏨 Searching for perfect accommodations...",
+                    "🎯 Planning daily activities and attractions...",
+                    "🍽️ Curating local dining recommendations...",
+                    "💰 Calculating budget estimates...",
+                    "📋 Compiling travel tips and information...",
+                    "✨ Finalizing your personalized itinerary..."
+                ];
+
+                let currentIndex = 0;
+                const loadingInterval = setInterval(() => {
+                    if (currentIndex < loadingMessages.length) {
+                        // Update the last agent message with loading text
+                        this.updateLastAgentMessage(loadingMessages[currentIndex]);
+                        currentIndex++;
+                    } else {
+                        clearInterval(loadingInterval);
+                    }
+                }, 2000); // Change message every 2 seconds
+
+                // Store interval ID to clear it later
+                this.loadingInterval = loadingInterval;
+            }
+
+            // Method to update the last agent message
+            updateLastAgentMessage(newText) {
+                const chatContent = document.getElementById('chatContent');
+                const agentMessages = chatContent.querySelectorAll('.chat-message.agent');
+                
+                if (agentMessages.length > 0) {
+                    const lastMessage = agentMessages[agentMessages.length - 1];
+                    const messageText = lastMessage.querySelector('.message-text');
+                    if (messageText) {
+                        messageText.textContent = newText;
+                    }
+                }
+            }
+
+            // Method to clear loading sequence
+            clearLoadingSequence() {
+                if (this.loadingInterval) {
+                    clearInterval(this.loadingInterval);
+                    this.loadingInterval = null;
+                }
+            }
+
+            // Method to check if server is running
+            async checkServerStatus() {
+                try {
+                    const response = await fetch('/', { method: 'HEAD' });
+                    return response.ok;
+                } catch (error) {
+                    console.error('Server check failed:', error);
+                    return false;
+                }
+            }
+
+            // Method to send data to backend
+            async sendToBackend(prompt) {
+                try {
+                    // Check if server is running first
+                    const serverRunning = await this.checkServerStatus();
+                    if (!serverRunning) {
+                        throw new Error('Server is not running. Please start the server and try again.');
+                    }
+
+                    // Show initial loading message
+                    this.addChatMessage('agent', '🚀 Starting to plan your trip...');
+                    this.speakText('Starting to plan your trip');
+                    
+                    // Start loading sequence
+                    this.showLoadingSequence();
+
+                    console.log('Sending request to backend:', prompt);
+                    console.log('Request URL:', '/api/generate-plan');
+
+                    const response = await fetch('/api/generate-plan', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            text: prompt
+                        })
+                    });
+
+                    console.log('Response status:', response.status);
+                    console.log('Response ok:', response.ok);
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('Response error text:', errorText);
+                        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                    }
+
+                    const result = await response.json();
+                    console.log('Backend response:', result);
+                    
+                    // Clear loading sequence
+                    this.clearLoadingSequence();
+                    
+                    // Display the result in chat
+                    if (result.data) {
+                        this.addChatMessage('agent', result.data);
+                        this.speakText(result.data);
+                    } else {
+                        this.addChatMessage('agent', 'I received a response but it seems to be empty. Please try again.');
+                        this.speakText('I received a response but it seems to be empty. Please try again.');
+                    }
+                    
+                    return result;
+                } catch (error) {
+                    console.error('Error sending to backend:', error);
+                    console.error('Error type:', error.constructor.name);
+                    console.error('Error message:', error.message);
+                    
+                    // Clear loading sequence on error
+                    this.clearLoadingSequence();
+                    
+                    let errorMessage = 'Sorry, there was an error processing your request. ';
+                    
+                    if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                        errorMessage += 'Please make sure the server is running and try again.';
+                    } else if (error.message.includes('HTTP error')) {
+                        errorMessage += `Server returned an error: ${error.message}`;
+                    } else {
+                        errorMessage += 'Please try again.';
+                    }
+                    
+                    this.addChatMessage('agent', errorMessage);
+                    this.speakText(errorMessage);
+                }
+            }
+
+            // Method to handle final user input from any source
+            handleFinalUserInput(inputText) {
+                // Extract trip information from the input
+                this.extractTripInfo(inputText);
+                
+                // Check if we have all required credentials
+                if (this.validateTripCredentials()) {
+                    // Generate AI prompt
+                    const aiPrompt = this.generateAIPrompt();
+                    this.finalUserInput = aiPrompt;
+                    console.log('Final AI Prompt:', this.finalUserInput);
+                    console.log('Trip Credentials:', this.tripCredentials);
+                    
+                    // Send to backend
+                    this.sendToBackend(this.finalUserInput);
+                } else {
+                    // Store the raw input and ask for missing information
+                    this.finalUserInput = inputText;
+                    console.log('User Input (incomplete):', this.finalUserInput);
+                    console.log('Missing credentials:', this.getMissingCredentials());
+                    this.askForMissingCredentials();
+                }
             }
 
             initializeSpeechRecognition() {
@@ -608,6 +941,8 @@
                         this.currentText = transcript;
                         this.addChatMessage('user', transcript);
                         this.speakText(transcript);
+                        // Store in final input variable
+                        this.handleFinalUserInput(transcript);
                     };
 
                     this.recognition.onerror = (event) => {
@@ -1066,6 +1401,8 @@
                         this.currentText = simulatedText;
                         this.addChatMessage('user', simulatedText);
                         this.speakText(simulatedText);
+                        // Store in final input variable
+                        this.handleFinalUserInput(simulatedText);
                     }, 2000);
                 };
                 reader.readAsArrayBuffer(file);
@@ -1099,19 +1436,33 @@
                 if (text) {
                     this.addChatMessage('user', text);
                     this.speakText(text);
+                    // Store in final input variable
+                    this.handleFinalUserInput(text);
                     chatInput.value = '';
                     
-                    // Simulate agent response
+                    // Simulate agent response based on missing credentials
                     setTimeout(() => {
-                        const responses = [
-                            "I understand you're planning a trip. Tell me more about your destination!",
-                            "That sounds interesting! When are you planning to travel?",
-                            "Great choice! What's your budget for this trip?",
-                            "I'll help you create the perfect itinerary for your adventure!"
-                        ];
-                        const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-                        this.addChatMessage('agent', randomResponse);
-                        this.speakText(randomResponse);
+                        const missing = this.getMissingCredentials();
+                        let response;
+                        
+                        if (missing.length > 0) {
+                            if (missing.includes('origin')) {
+                                response = "Great! I'd love to help you plan your trip. Where are you traveling from?";
+                            } else if (missing.includes('destination')) {
+                                response = "Perfect! Where would you like to go?";
+                            } else if (missing.includes('start date')) {
+                                response = "Excellent choice! When would you like to start your trip?";
+                            } else if (missing.includes('end date or number of days')) {
+                                response = "Almost there! When does your trip end, or how many days will you be traveling?";
+                            } else {
+                                response = "I need a bit more information to create your perfect itinerary. Please provide: " + missing.join(', ') + ".";
+                            }
+                        } else {
+                            response = "Perfect! I have all the information I need. Let me create your personalized itinerary!";
+                        }
+                        
+                        this.addChatMessage('agent', response);
+                        this.speakText(response);
                     }, 1000);
                 }
             }
@@ -1150,10 +1501,12 @@
                 this.ttsData = new Uint8Array(128);
                 this.ttsInterval = setInterval(() => {
                     // Generate wave-like pattern for TTS
-                    for (let i = 0; i < this.ttsData.length; i++) {
-                        const time = Date.now() * 0.01;
-                        const wave = Math.sin(time + i * 0.2) * 0.5 + 0.5;
-                        this.ttsData[i] = Math.floor(wave * 150 + 50);
+                    if (this.ttsData && this.ttsData.length > 0) {
+                        for (let i = 0; i < this.ttsData.length; i++) {
+                            const time = Date.now() * 0.01;
+                            const wave = Math.sin(time + i * 0.2) * 0.5 + 0.5;
+                            this.ttsData[i] = Math.floor(wave * 150 + 50);
+                        }
                     }
                 }, 50);
             }
@@ -1162,8 +1515,8 @@
                 if (this.ttsInterval) {
                     clearInterval(this.ttsInterval);
                     this.ttsInterval = null;
-                    this.ttsData = null;
                 }
+                this.ttsData = null;
             }
 
             toggleMicrophone() {
@@ -1269,7 +1622,7 @@
         // Initialize the audio interface when page loads
         document.addEventListener('DOMContentLoaded', () => {
             const app = new AudioInterface();
-            app.speakText("Hello! I'm Itine, your itinerary planner. Tell me about your trip!");
+            app.speakText("Hello! I'm Itine, your itinerary planner. I'll help you create the perfect travel itinerary. Please tell me: where are you traveling from, where are you going, and when?");
         });
     </script>
 </body>
