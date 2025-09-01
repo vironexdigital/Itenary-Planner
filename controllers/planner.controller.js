@@ -7,18 +7,18 @@ import { spawn } from 'child_process';
 export const plannerController = async(req,res)=>{
     const {text}= req.body;
 
+    console.log("Text from the frontend is",text);
+
     if(!text){
         logger.error("Text from the frontend is missing");
-        return res.status(400
-                .json(new Response(400,"","Invalid request"))
-        )
+        return res.status(400)
+                .json(new Response(400,"","Invalid request"));
     }
 
     if(typeof(text)!=='string'){
         logger.error("The text send from the frontend is not a string");
-        return res.status(400
-                .json(new Response(400,"","Invalid request"))
-        )
+        return res.status(400)
+                .json(new Response(400,"","Invalid request"));
     }
 
     const currentFilePath = fileURLToPath(import.meta.url) ;

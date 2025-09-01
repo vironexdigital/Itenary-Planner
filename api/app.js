@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import express from 'express';
+import cors from 'cors';
 import plannerRoute from '../routes/planner.route.js'
 import { fileURLToPath } from 'url';
 import path from 'path';
@@ -10,6 +11,13 @@ const currentDirectoryPath = path.dirname(currentFilePath);
 
 const app = express();
 console.log(currentDirectoryPath);
+
+// Enable CORS for all routes
+app.use(cors({
+    origin: ['http://localhost:8081', 'http://localhost:3000', 'http://localhost:5000'],
+    credentials: true
+}));
+
 app.use(express.json({limit:'16kb'}));
 app.use(express.urlencoded({extended:true,limit:'16kb'}));
 

@@ -644,10 +644,10 @@
                     return null;
                 }
 
-                let prompt = `Plan a Trip from ${this.tripCredentials.origin} to ${this.tripCredentials.destination} starting ${this.tripCredentials.startDate}`;
+                let prompt = `Arrange my trip from ${this.tripCredentials.origin} to ${this.tripCredentials.destination} from ${this.tripCredentials.startDate}`;
                 
                 if (this.tripCredentials.endDate) {
-                    prompt += ` ending ${this.tripCredentials.endDate}`;
+                    prompt += ` to ${this.tripCredentials.endDate}`;
                 } else if (this.tripCredentials.numberOfDays) {
                     prompt += ` for ${this.tripCredentials.numberOfDays} days`;
                 }
@@ -846,7 +846,7 @@
                     console.log('Sending request to backend:', prompt);
                     console.log('Request URL:', '/api/generate-plan');
 
-                    const response = await fetch('/api/generate-plan', {
+                    const response = await fetch('http://localhost:8081/api/generate-plan', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
