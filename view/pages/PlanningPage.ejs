@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Itinerary Planner - Audio Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0a0a0a;
+            color: #ffffff;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            gap: 2px;
+        }
+
+        /* Left Panel - AUDIO */
+        .audio-panel {
+            flex: 1;
+            background-color: #1a1a1a;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background-color: #2a2a2a;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            border-bottom: 1px solid #333;
+        }
+
+        .audio-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .audio-visualizer {
+            width: 100%;
+            max-width: 400px;
+            height: 120px;
+            background-color: #1a1a1a;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #333;
+        }
+
+        .waveform-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .waveform-canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+        }
+
+        .waveform-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(26, 26, 26, 0.8);
+            border-radius: 10px;
+            transition: opacity 0.3s ease;
+        }
+
+        .waveform-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .waveform-status {
+            font-size: 14px;
+            color: #888;
+            text-align: center;
+        }
+
+        .waveform-status.recording {
+            color: #ff4444;
+            animation: pulse 1s infinite;
+        }
+
+        .waveform-status.tts {
+            color: #00ffff;
+            animation: pulse 1.5s infinite;
+        }
+
+        /* Enhanced waveform animations */
+        .waveform-container {
+            position: relative;
+        }
+
+        .waveform-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(0, 255, 255, 0.1) 50%, transparent 70%);
+            background-size: 200% 200%;
+            animation: shimmer 3s ease-in-out infinite;
+            border-radius: 10px;
+            pointer-events: none;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% -200%; }
+            50% { background-position: 200% 200%; }
+            100% { background-position: -200% -200%; }
+        }
+
+        .waveform-container.recording::before {
+            background: linear-gradient(45deg, transparent 30%, rgba(255, 68, 68, 0.2) 50%, transparent 70%);
+            animation: shimmer 1s ease-in-out infinite;
+        }
+
+        .waveform-container.tts::before {
+            background: linear-gradient(45deg, transparent 30%, rgba(0, 255, 255, 0.2) 50%, transparent 70%);
+            animation: shimmer 2s ease-in-out infinite;
+        }
+
+        .audio-bars-fallback {
+            display: none;
+            gap: 8px;
+            margin-bottom: 30px;
+        }
+
+        .audio-bar {
+            width: 20px;
+            height: 60px;
+            background-color: #2a4a4a;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .audio-bar.active {
+            background-color: #00ffff;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+
+        .audio-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .upload-area {
+            border: 2px dashed #444;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .upload-area:hover {
+            border-color: #00ffff;
+            background-color: #1a2a2a;
+        }
+
+        .upload-area.dragover {
+            border-color: #00ffff;
+            background-color: #1a2a2a;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        /* Center Panel - CHAT */
+        .chat-panel {
+            flex: 2;
+            background-color: #1a1a1a;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-message {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 80%;
+        }
+
+        .chat-message.agent {
+            background-color: #1a2a2a;
+            border-left: 4px solid #00ffff;
+            align-self: flex-start;
+        }
+
+        .chat-message.user {
+            background-color: #2a1a2a;
+            border-left: 4px solid #ff00ff;
+            align-self: flex-end;
+        }
+
+        .message-sender {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #00ffff;
+        }
+
+        .message-text {
+            line-height: 1.4;
+            color: #ffffff;
+        }
+
+        .chat-input-area {
+            padding: 20px;
+            border-top: 1px solid #333;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #444;
+            border-radius: 8px;
+            background-color: #2a2a2a;
+            color: #ffffff;
+            font-size: 14px;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #00ffff;
+        }
+
+        .send-btn {
+            padding: 12px 24px;
+            background-color: #444;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .send-btn:hover {
+            background-color: #00ffff;
+            color: #000000;
+        }
+
+        /* Right Panel - Controls */
+        .control-panel {
+            flex: 1;
+            background-color: #1a1a1a;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .control-section {
+            background-color: #2a2a2a;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .control-section h3 {
+            margin-bottom: 15px;
+            color: #00ffff;
+            font-size: 16px;
+        }
+
+
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #444;
+        }
+
+        .status-value {
+            color: #00ffff;
+            font-weight: bold;
+        }
+
+        .mic-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .mic-icon {
+            font-size: 24px;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mic-icon.active {
+            color: #00ffff;
+        }
+
+        .mic-icon.muted::after {
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 30px;
+            background-color: #ff0000;
+            transform: rotate(45deg);
+            margin-left: -1px;
+            margin-top: -15px;
+        }
+
+        .mic-select {
+            flex: 1;
+            padding: 8px;
+            background-color: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 5px;
+            color: #ffffff;
+        }
+
+        .mic-visualizer {
+            display: flex;
+            gap: 3px;
+            justify-content: center;
+        }
+
+        .mic-dot {
+            width: 6px;
+            height: 6px;
+            background-color: #666;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .mic-dot.active {
+            background-color: #00ffff;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        .color-palette {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .color-swatch {
+            width: 25px;
+            height: 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.1);
+        }
+
+        .color-swatch.selected {
+            border-color: #ffffff;
+            transform: scale(1.1);
+        }
+
+        .color-swatch.cyan { background-color: #00ffff; }
+        .color-swatch.grey1 { background-color: #444444; }
+        .color-swatch.grey2 { background-color: #666666; }
+        .color-swatch.brown { background-color: #8B4513; }
+        .color-swatch.green { background-color: #228B22; }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00ffff;
+        }
+
+        /* Audio recording indicator */
+        .recording-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #ff0000;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            display: none;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* Responsive design */
+        @media (max-width: 1200px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .audio-panel, .chat-panel, .control-panel {
+                flex: none;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="recording-indicator" id="recordingIndicator">
+        🎤 Recording...
+    </div>
+
+    <div class="container">
+        <!-- Left Panel - AUDIO -->
+        <div class="audio-panel">
+            <div class="panel-header">AUDIO</div>
+            <div class="audio-content">
+                <div class="audio-visualizer" id="audioVisualizer">
+                    <div class="waveform-container">
+                        <canvas class="waveform-canvas" id="waveformCanvas"></canvas>
+                        <div class="waveform-overlay hidden" id="waveformOverlay">
+                            <div class="waveform-status" id="waveformStatus">Ready</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="audio-bars-fallback" id="audioBarsFallback">
+                    <div class="audio-bar"></div>
+                    <div class="audio-bar"></div>
+                    <div class="audio-bar"></div>
+                    <div class="audio-bar"></div>
+                    <div class="audio-bar"></div>
+                </div>
+                
+                <div class="audio-controls">
+                    <div class="upload-area" id="uploadArea">
+                        <div>🎵 Drop audio file here</div>
+                        <div style="font-size: 12px; margin-top: 10px; color: #888;">
+                            or click to browse
+                        </div>
+                        <input type="file" id="audioFileInput" class="file-input" accept="audio/*">
+                    </div>
+                    
+                    <button id="recordBtn" style="padding: 15px 30px; background-color: #00ffff; color: #000; border: none; border-radius: 25px; cursor: pointer; font-weight: bold;">
+                        🎤 Start Recording
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center Panel - CHAT -->
+        <div class="chat-panel">
+            <div class="panel-header">CHAT</div>
+            <div class="chat-content" id="chatContent">
+                <div class="chat-message agent">
+                    <div class="message-sender">Itine</div>
+                    <div class="message-text">Hello! I'm Itine, your itinerary planner. Tell me about your trip!</div>
+                </div>
+            </div>
+            
+            <div class="chat-input-area">
+                <input type="text" class="chat-input" id="chatInput" placeholder="Type a message">
+                <button class="send-btn" id="sendBtn">SEND</button>
+            </div>
+        </div>
+
+        <!-- Right Panel - Controls -->
+        <div class="control-panel">
+            <div class="control-section">
+                <h3>STATUS</h3>
+                <div class="status-item">
+                    <span>Room connected:</span>
+                    <span class="status-value" id="roomStatus">CONNECTED</span>
+                </div>
+                <div class="status-item">
+                    <span>Agent connected:</span>
+                    <span class="status-value" id="agentStatus">TRUE</span>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>MICROPHONE</h3>
+                <div class="mic-controls">
+                    <div class="mic-icon" id="micIcon">🎤</div>
+                    <select class="mic-select" id="micSelect">
+                        <option>Default - Microphone</option>
+                    </select>
+                </div>
+                <div class="mic-visualizer" id="micVisualizer">
+                    <div class="mic-dot"></div>
+                    <div class="mic-dot"></div>
+                    <div class="mic-dot"></div>
+                    <div class="mic-dot"></div>
+                    <div class="mic-dot"></div>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>COLOR</h3>
+                <div class="color-palette">
+                    <div class="color-swatch cyan selected" data-color="#00ffff"></div>
+                    <div class="color-swatch grey1" data-color="#444444"></div>
+                    <div class="color-swatch grey2" data-color="#666666"></div>
+                    <div class="color-swatch brown" data-color="#8B4513"></div>
+                    <div class="color-swatch green" data-color="#228B22"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class AudioInterface {
+            constructor() {
+                this.mediaRecorder = null;
+                this.audioChunks = [];
+                this.isRecording = false;
+                this.recognition = null;
+                this.synthesis = window.speechSynthesis;
+                this.currentText = '';
+                
+                // Audio analysis properties
+                this.audioContext = null;
+                this.analyser = null;
+                this.microphone = null;
+                this.scriptProcessor = null;
+                this.dataArray = null;
+                this.animationId = null;
+                
+                // Waveform properties
+                this.waveformCanvas = null;
+                this.waveformCtx = null;
+                this.waveformData = [];
+                this.isTTSActive = false;
+                this.currentAccentColor = '#00ffff';
+                
+                // TTS simulation properties
+                this.ttsData = null;
+                this.ttsInterval = null;
+                
+                this.initializeSpeechRecognition();
+                this.initializeEventListeners();
+                this.initializeWaveformVisualizer();
+            }
+
+            initializeSpeechRecognition() {
+                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    this.recognition = new SpeechRecognition();
+                    this.recognition.continuous = false;
+                    this.recognition.interimResults = false;
+                    this.recognition.lang = 'en-US';
+
+                    this.recognition.onresult = (event) => {
+                        const transcript = event.results[0][0].transcript;
+                        this.currentText = transcript;
+                        this.addChatMessage('user', transcript);
+                        this.speakText(transcript);
+                    };
+
+                    this.recognition.onerror = (event) => {
+                        console.error('Speech recognition error:', event.error);
+                    };
+                } else {
+                    console.warn('Speech recognition not supported');
+                }
+            }
+
+            initializeEventListeners() {
+                // Record button
+                const recordBtn = document.getElementById('recordBtn');
+                recordBtn.addEventListener('click', () => this.toggleRecording());
+
+                // File upload
+                const uploadArea = document.getElementById('uploadArea');
+                const fileInput = document.getElementById('audioFileInput');
+
+                uploadArea.addEventListener('click', () => fileInput.click());
+                uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    uploadArea.classList.add('dragover');
+                });
+                uploadArea.addEventListener('dragleave', () => {
+                    uploadArea.classList.remove('dragover');
+                });
+                uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    uploadArea.classList.remove('dragover');
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        this.handleAudioFile(files[0]);
+                    }
+                });
+
+                fileInput.addEventListener('change', (e) => {
+                    if (e.target.files.length > 0) {
+                        this.handleAudioFile(e.target.files[0]);
+                    }
+                });
+
+                // Chat input
+                const sendBtn = document.getElementById('sendBtn');
+                const chatInput = document.getElementById('chatInput');
+
+                sendBtn.addEventListener('click', () => this.sendChatMessage());
+                chatInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.sendChatMessage();
+                    }
+                });
+
+                // Microphone icon
+                const micIcon = document.getElementById('micIcon');
+                micIcon.addEventListener('click', () => this.toggleMicrophone());
+
+                // Color palette
+                const colorSwatches = document.querySelectorAll('.color-swatch');
+                colorSwatches.forEach(swatch => {
+                    swatch.addEventListener('click', (event) => this.changeAccentColor(swatch.dataset.color, event));
+                });
+            }
+
+            initializeWaveformVisualizer() {
+                this.waveformCanvas = document.getElementById('waveformCanvas');
+                this.waveformCtx = this.waveformCanvas.getContext('2d');
+                this.visualizerBars = document.querySelectorAll('.audio-bar');
+                this.micDots = document.querySelectorAll('.mic-dot');
+                
+                // Set canvas dimensions
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
+                
+                // Initialize Web Audio API
+                this.initializeWebAudio();
+                
+                // Start animation loop
+                this.animateWaveform();
+            }
+
+            resizeCanvas() {
+                // Set canvas dimensions to match its display size
+                const rect = this.waveformCanvas.getBoundingClientRect();
+                this.waveformCanvas.width = rect.width * window.devicePixelRatio;
+                this.waveformCanvas.height = rect.height * window.devicePixelRatio;
+                
+                // Scale the context to match device pixel ratio
+                this.waveformCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
+                
+                // Set CSS size back to original
+                this.waveformCanvas.style.width = rect.width + 'px';
+                this.waveformCanvas.style.height = rect.height + 'px';
+
+                this.visualizerBars.forEach((bar, index) => {
+                    if (Math.random() > 0.7) {
+                        bar.classList.add('active');
+                        // Apply current accent color to active bars
+                        const currentColor = document.querySelector('.color-swatch.selected')?.dataset.color || '#00ffff';
+                        bar.style.backgroundColor = currentColor;
+                        bar.style.boxShadow = `0 0 20px ${currentColor}80`;
+                        setTimeout(() => {
+                            bar.classList.remove('active');
+                            bar.style.backgroundColor = '';
+                            bar.style.boxShadow = '';
+                        }, 200);
+                    }
+                });
+
+                this.micDots.forEach((dot, index) => {
+                    if (Math.random() > 0.8) {
+                        dot.classList.add('active');
+                        // Apply current accent color to active dots
+                        const currentColor = document.querySelector('.color-swatch.selected')?.dataset.color || '#00ffff';
+                        dot.style.backgroundColor = currentColor;
+                        dot.style.boxShadow = `0 0 10px ${currentColor}80`;
+                        setTimeout(() => {
+                            dot.classList.remove('active');
+                            dot.style.backgroundColor = '';
+                            dot.style.boxShadow = '';
+                        }, 150);
+                    }
+                });
+            }
+
+            initializeWebAudio() {
+                try {
+                    // Create audio context
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.audioContext = new AudioContext();
+                    
+                    // Create analyser node with optimized settings for real-time visualization
+                    this.analyser = this.audioContext.createAnalyser();
+                    this.analyser.fftSize = 512; // Higher resolution for better waveform
+                    this.analyser.smoothingTimeConstant = 0.3; // Less smoothing for more responsive visualization
+                    this.analyser.minDecibels = -90;
+                    this.analyser.maxDecibels = -10;
+                    
+                    // Create data array for frequency data
+                    this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+                    
+                    console.log('Web Audio API initialized successfully');
+                } catch (error) {
+                    console.warn('Web Audio API not supported, using fallback visualization');
+                    this.useFallbackVisualization();
+                }
+            }
+
+            useFallbackVisualization() {
+                document.getElementById('audioVisualizer').style.display = 'none';
+                document.getElementById('audioBarsFallback').style.display = 'flex';
+                
+                // Simulate audio activity for fallback
+                setInterval(() => {
+                    if (this.isRecording || this.isTTSActive) {
+                        this.updateFallbackVisualizer();
+                    }
+                }, 100);
+            }
+
+            updateFallbackVisualizer() {
+                this.visualizerBars.forEach((bar, index) => {
+                    if (Math.random() > 0.7) {
+                        bar.classList.add('active');
+                        const currentColor = document.querySelector('.color-swatch.selected')?.dataset.color || '#00ffff';
+                        bar.style.backgroundColor = currentColor;
+                        bar.style.boxShadow = `0 0 20px ${currentColor}80`;
+                        setTimeout(() => {
+                            bar.classList.remove('active');
+                            bar.style.backgroundColor = '';
+                            bar.style.boxShadow = '';
+                        }, 200);
+                    }
+                });
+
+                this.micDots.forEach((dot, index) => {
+                    if (Math.random() > 0.8) {
+                        dot.classList.add('active');
+                        const currentColor = document.querySelector('.color-swatch.selected')?.dataset.color || '#00ffff';
+                        dot.style.backgroundColor = currentColor;
+                        dot.style.boxShadow = `0 0 10px ${currentColor}80`;
+                        setTimeout(() => {
+                            dot.classList.remove('active');
+                            dot.style.backgroundColor = '';
+                            dot.style.boxShadow = '';
+                        }, 150);
+                    }
+                });
+            }
+
+            animateWaveform() {
+                // Always continue the animation loop, even if audio context is suspended
+                this.drawWaveform();
+                this.animationId = requestAnimationFrame(() => this.animateWaveform());
+            }
+
+            drawWaveform() {
+                if (!this.waveformCtx) return;
+
+                const canvas = this.waveformCanvas;
+                const ctx = this.waveformCtx;
+                const rect = canvas.getBoundingClientRect();
+                const width = rect.width;
+                const height = rect.height;
+
+                // Clear canvas
+                ctx.clearRect(0, 0, width, height);
+
+                const currentColor = this.currentAccentColor || document.querySelector('.color-swatch.selected')?.dataset.color || '#00ffff';
+
+                if (this.analyser && (this.isRecording || this.isTTSActive) && this.audioContext && this.audioContext.state === 'running') {
+                    // Real-time audio visualization - get fresh frequency data
+                    this.analyser.getByteFrequencyData(this.dataArray);
+                    this.drawAudioBars(ctx, width, height, currentColor);
+                } else {
+                    // Idle state - show subtle animated bars
+                    this.drawIdleBars(ctx, width, height, currentColor);
+                }
+
+                // Draw center line
+                ctx.strokeStyle = currentColor + '60'; // Semi-transparent
+                ctx.lineWidth = 1;
+                ctx.setLineDash([3, 3]);
+                ctx.beginPath();
+                ctx.moveTo(10, height / 2);
+                ctx.lineTo(width - 10, height / 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            drawAudioBars(ctx, width, height, currentColor) {
+                let dataArray = this.dataArray;
+                let barCount = Math.min(64, dataArray.length); // Limit bars for better visualization
+                
+                // Use TTS data if available
+                if (this.isTTSActive && this.ttsData) {
+                    dataArray = this.ttsData;
+                    barCount = Math.min(64, dataArray.length);
+                }
+                
+                const barWidth = (width - 20) / barCount; // Add padding
+                const startX = 10; // Left padding
+                
+                ctx.shadowColor = currentColor;
+                ctx.shadowBlur = 8;
+
+                for (let i = 0; i < barCount; i++) {
+                    // Get frequency data and normalize it
+                    const normalizedValue = dataArray[i] / 255;
+                    const barHeight = Math.max(4, normalizedValue * height * 0.9); // Minimum height of 4px
+                    const x = startX + i * barWidth;
+                    const y = (height - barHeight) / 2;
+
+                    // Create gradient for each bar with intensity-based opacity
+                    const gradient = ctx.createLinearGradient(x, y, x, y + barHeight);
+                    const intensity = Math.min(1, normalizedValue + 0.3); // Ensure minimum visibility
+                    const topColor = currentColor + Math.floor(intensity * 255).toString(16).padStart(2, '0');
+                    const bottomColor = this.adjustColor(currentColor, -0.4) + Math.floor(intensity * 0.7 * 255).toString(16).padStart(2, '0');
+                    
+                    gradient.addColorStop(0, topColor);
+                    gradient.addColorStop(1, bottomColor);
+
+                    ctx.fillStyle = gradient;
+                    
+                    // Draw rounded rectangle with smoother edges
+                    this.drawRoundedRect(ctx, x + 1, y, Math.max(2, barWidth - 2), barHeight, Math.min(3, barWidth / 2));
+                    
+                    // Add extra glow for high-intensity bars
+                    if (normalizedValue > 0.7) {
+                        ctx.shadowBlur = 15;
+                        ctx.fillStyle = currentColor + '40'; // Semi-transparent overlay
+                        this.drawRoundedRect(ctx, x + 1, y, Math.max(2, barWidth - 2), barHeight, Math.min(3, barWidth / 2));
+                        ctx.shadowBlur = 8;
+                    }
+                }
+
+                ctx.shadowBlur = 0;
+            }
+
+            drawIdleBars(ctx, width, height, currentColor) {
+                const barCount = 32;
+                const barWidth = width / barCount;
+                const time = Date.now() * 0.001;
+                
+                ctx.shadowColor = currentColor;
+                ctx.shadowBlur = 5;
+
+                for (let i = 0; i < barCount; i++) {
+                    // Create subtle wave pattern
+                    const wave = Math.sin(time * 2 + i * 0.3) * 0.5 + 0.5;
+                    const barHeight = wave * height * 0.3;
+                    const x = i * barWidth;
+                    const y = (height - barHeight) / 2;
+
+                    // Create subtle gradient
+                    const gradient = ctx.createLinearGradient(x, y, x, y + barHeight);
+                    const alpha = 0.3 + wave * 0.4;
+                    gradient.addColorStop(0, `${currentColor}${Math.floor(alpha * 255).toString(16).padStart(2, '0')}`);
+                    gradient.addColorStop(1, `${currentColor}00`);
+
+                    ctx.fillStyle = gradient;
+                    
+                    // Draw rounded rectangle
+                    this.drawRoundedRect(ctx, x + 2, y, barWidth - 4, barHeight, 3);
+                }
+
+                ctx.shadowBlur = 0;
+            }
+
+            drawRoundedRect(ctx, x, y, width, height, radius) {
+                ctx.beginPath();
+                ctx.moveTo(x + radius, y);
+                ctx.lineTo(x + width - radius, y);
+                ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+                ctx.lineTo(x + width, y + height - radius);
+                ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+                ctx.lineTo(x + radius, y + height);
+                ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+                ctx.lineTo(x, y + radius);
+                ctx.quadraticCurveTo(x, y, x + radius, y);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            showWaveformStatus(type, message) {
+                const overlay = document.getElementById('waveformOverlay');
+                const status = document.getElementById('waveformStatus');
+                const container = document.querySelector('.waveform-container');
+                
+                if (overlay && status) {
+                    status.textContent = message;
+                    status.className = `waveform-status ${type}`;
+                    overlay.classList.remove('hidden');
+                }
+                
+                if (container) {
+                    container.classList.remove('recording', 'tts');
+                    container.classList.add(type);
+                }
+            }
+
+            hideWaveformStatus() {
+                const overlay = document.getElementById('waveformOverlay');
+                const container = document.querySelector('.waveform-container');
+                
+                if (overlay) {
+                    overlay.classList.add('hidden');
+                }
+                
+                if (container) {
+                    container.classList.remove('recording', 'tts');
+                }
+            }
+
+            async toggleRecording() {
+                if (this.isRecording) {
+                    this.stopRecording();
+                } else {
+                    await this.startRecording();
+                }
+            }
+
+            async startRecording() {
+                try {
+                    // Resume audio context if it's suspended (required by some browsers)
+                    if (this.audioContext && this.audioContext.state === 'suspended') {
+                        await this.audioContext.resume();
+                    }
+                    
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    this.mediaRecorder = new MediaRecorder(stream);
+                    this.audioChunks = [];
+                    this.currentText = ''; // Reset current text for new recording
+
+                    this.mediaRecorder.ondataavailable = (event) => {
+                        this.audioChunks.push(event.data);
+                    };
+
+                    this.mediaRecorder.onstop = () => {
+                        this.processAudioRecording();
+                    };
+
+                    this.mediaRecorder.start();
+                    this.isRecording = true;
+                    
+                    // Connect microphone to audio analyzer for real-time visualization
+                    if (this.audioContext && this.analyser) {
+                        this.microphone = this.audioContext.createMediaStreamSource(stream);
+                        this.microphone.connect(this.analyser);
+                        
+                        // Show recording status in waveform
+                        this.showWaveformStatus('recording', 'Recording...');
+                    }
+                    
+                    document.getElementById('recordBtn').textContent = '⏹️ Stop Recording';
+                    document.getElementById('recordBtn').style.backgroundColor = '#ff4444';
+                    document.getElementById('recordingIndicator').style.display = 'block';
+                    
+                    // Start speech recognition
+                    if (this.recognition) {
+                        this.recognition.start();
+                    }
+                } catch (error) {
+                    console.error('Error starting recording:', error);
+                    alert('Error accessing microphone. Please check permissions.');
+                }
+            }
+
+            stopRecording() {
+                if (this.mediaRecorder && this.isRecording) {
+                    this.mediaRecorder.stop();
+                    this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                    this.isRecording = false;
+                    
+                    // Disconnect microphone from analyzer
+                    if (this.microphone) {
+                        this.microphone.disconnect();
+                        this.microphone = null;
+                    }
+                    
+                    // Hide waveform status
+                    this.hideWaveformStatus();
+                    
+                    document.getElementById('recordBtn').textContent = '🎤 Start Recording';
+                    document.getElementById('recordBtn').style.backgroundColor = '#00ffff';
+                    document.getElementById('recordingIndicator').style.display = 'none';
+                    
+                    // Stop speech recognition
+                    if (this.recognition) {
+                        this.recognition.stop();
+                    }
+                }
+            }
+
+            processAudioRecording() {
+                const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                
+                // If speech recognition captured text, it was already processed in onresult
+                // If not, we don't show any success message - just silently complete
+                // The TTS will only happen if speech recognition successfully transcribed the audio
+            }
+
+            handleAudioFile(file) {
+                if (!file.type.startsWith('audio/')) {
+                    alert('Please select an audio file');
+                    return;
+                }
+
+                // Simulate audio file processing
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    // Simulate audio-to-text conversion
+                    setTimeout(() => {
+                        const simulatedText = `Processed audio file: ${file.name}`;
+                        this.currentText = simulatedText;
+                        this.addChatMessage('user', simulatedText);
+                        this.speakText(simulatedText);
+                    }, 2000);
+                };
+                reader.readAsArrayBuffer(file);
+            }
+
+            addChatMessage(sender, text) {
+                const chatContent = document.getElementById('chatContent');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `chat-message ${sender}`;
+                
+                const senderDiv = document.createElement('div');
+                senderDiv.className = 'message-sender';
+                senderDiv.textContent = sender === 'user' ? 'You' : 'Itine';
+                
+                const textDiv = document.createElement('div');
+                textDiv.className = 'message-text';
+                textDiv.textContent = text;
+                
+                messageDiv.appendChild(senderDiv);
+                messageDiv.appendChild(textDiv);
+                chatContent.appendChild(messageDiv);
+                
+                // Auto-scroll to bottom
+                chatContent.scrollTop = chatContent.scrollHeight;
+            }
+
+            sendChatMessage() {
+                const chatInput = document.getElementById('chatInput');
+                const text = chatInput.value.trim();
+                
+                if (text) {
+                    this.addChatMessage('user', text);
+                    this.speakText(text);
+                    chatInput.value = '';
+                    
+                    // Simulate agent response
+                    setTimeout(() => {
+                        const responses = [
+                            "I understand you're planning a trip. Tell me more about your destination!",
+                            "That sounds interesting! When are you planning to travel?",
+                            "Great choice! What's your budget for this trip?",
+                            "I'll help you create the perfect itinerary for your adventure!"
+                        ];
+                        const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                        this.addChatMessage('agent', randomResponse);
+                        this.speakText(randomResponse);
+                    }, 1000);
+                }
+            }
+
+            speakText(text) {
+                if (this.synthesis) {
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.rate = 0.9;
+                    utterance.pitch = 1;
+                    
+                    // Show TTS status in waveform
+                    this.showWaveformStatus('tts', 'Speaking...');
+                    this.isTTSActive = true;
+                    
+                    // Create simulated audio data for TTS visualization
+                    this.createTTSSimulation();
+                    
+                    utterance.onend = () => {
+                        this.isTTSActive = false;
+                        this.hideWaveformStatus();
+                        this.stopTTSSimulation();
+                    };
+                    
+                    utterance.onerror = () => {
+                        this.isTTSActive = false;
+                        this.hideWaveformStatus();
+                        this.stopTTSSimulation();
+                    };
+                    
+                    this.synthesis.speak(utterance);
+                }
+            }
+
+            createTTSSimulation() {
+                // Create simulated frequency data for TTS visualization
+                this.ttsData = new Uint8Array(128);
+                this.ttsInterval = setInterval(() => {
+                    // Generate wave-like pattern for TTS
+                    for (let i = 0; i < this.ttsData.length; i++) {
+                        const time = Date.now() * 0.01;
+                        const wave = Math.sin(time + i * 0.2) * 0.5 + 0.5;
+                        this.ttsData[i] = Math.floor(wave * 150 + 50);
+                    }
+                }, 50);
+            }
+
+            stopTTSSimulation() {
+                if (this.ttsInterval) {
+                    clearInterval(this.ttsInterval);
+                    this.ttsInterval = null;
+                    this.ttsData = null;
+                }
+            }
+
+            toggleMicrophone() {
+                const micIcon = document.getElementById('micIcon');
+                if (micIcon.classList.contains('active')) {
+                    micIcon.classList.remove('active');
+                    micIcon.classList.add('muted');
+                } else {
+                    micIcon.classList.remove('muted');
+                    micIcon.classList.add('active');
+                }
+            }
+
+            changeAccentColor(color, event) {
+                // Remove selected class from all swatches
+                document.querySelectorAll('.color-swatch').forEach(swatch => {
+                    swatch.classList.remove('selected');
+                });
+                
+                // Add selected class to clicked swatch
+                event.target.classList.add('selected');
+                
+                // Update CSS custom properties
+                document.documentElement.style.setProperty('--accent-color', color);
+                
+                // Update all accent color elements consistently
+                this.updateAccentColors(color);
+            }
+
+            updateAccentColors(color) {
+                // Update audio bars
+                document.querySelectorAll('.audio-bar.active').forEach(bar => {
+                    bar.style.backgroundColor = color;
+                    bar.style.boxShadow = `0 0 20px ${color}80`;
+                });
+
+                // Update status values
+                document.querySelectorAll('.status-value').forEach(status => {
+                    status.style.color = color;
+                });
+
+                // Update message senders
+                document.querySelectorAll('.message-sender').forEach(sender => {
+                    sender.style.color = color;
+                });
+
+                // Update microphone icon when active
+                const micIcon = document.getElementById('micIcon');
+                if (micIcon.classList.contains('active')) {
+                    micIcon.style.color = color;
+                }
+
+                // Update mic dots when active
+                document.querySelectorAll('.mic-dot.active').forEach(dot => {
+                    dot.style.backgroundColor = color;
+                    dot.style.boxShadow = `0 0 10px ${color}80`;
+                });
+
+                // Update send button hover state
+                const sendBtn = document.getElementById('sendBtn');
+                sendBtn.addEventListener('mouseenter', () => {
+                    sendBtn.style.backgroundColor = color;
+                    sendBtn.style.color = '#000000';
+                });
+                sendBtn.addEventListener('mouseleave', () => {
+                    sendBtn.style.backgroundColor = '#444';
+                    sendBtn.style.color = '#ffffff';
+                });
+
+                // Update record button
+                const recordBtn = document.getElementById('recordBtn');
+                if (!this.isRecording) {
+                    recordBtn.style.backgroundColor = color;
+                }
+
+                // Update upload area hover state
+                const uploadArea = document.getElementById('uploadArea');
+                uploadArea.addEventListener('mouseenter', () => {
+                    uploadArea.style.borderColor = color;
+                    uploadArea.style.backgroundColor = this.adjustColor(color, -0.1);
+                });
+                uploadArea.addEventListener('mouseleave', () => {
+                    uploadArea.style.borderColor = '#444';
+                    uploadArea.style.backgroundColor = 'transparent';
+                });
+
+                // Update waveform colors (will be applied on next draw cycle)
+                this.currentAccentColor = color;
+            }
+
+            adjustColor(color, factor) {
+                // Helper function to adjust color brightness
+                const hex = color.replace('#', '');
+                const r = Math.max(0, Math.min(255, parseInt(hex.substr(0, 2), 16) + Math.round(255 * factor)));
+                const g = Math.max(0, Math.min(255, parseInt(hex.substr(2, 2), 16) + Math.round(255 * factor)));
+                const b = Math.max(0, Math.min(255, parseInt(hex.substr(4, 2), 16) + Math.round(255 * factor)));
+                return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+            }
+
+
+        }
+
+        // Initialize the audio interface when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            const app = new AudioInterface();
+            app.speakText("Hello! I'm Itine, your itinerary planner. Tell me about your trip!");
+        });
+    </script>
+</body>
+</html>
