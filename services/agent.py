@@ -21,7 +21,7 @@ load_dotenv()
 os.environ["GROQ_API_KEY"] = os.getenv("GROQ_API_KEY")
 os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
 
-llm = init_chat_model("groq:llama3-8b-8192")
+llm = init_chat_model("groq:llama-3.1-8b-instant")
 llm2 = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
 
 class State(MessagesState):
@@ -36,6 +36,8 @@ class State(MessagesState):
     task_complete: bool = False
     current_task: str = ""
     user_query: str = ""
+    missing_info: list = []
+    extracted_info: dict = {}
     
 def create_TripAgent_Chain():
     """Creates the TripAgent Decision chain."""
@@ -68,6 +70,8 @@ def create_TripAgent_Chain():
 def TripAgent(State)-> Dict:
     """TripAgent decides next agent"""
     
+
+    
     messages = State["messages"]
     task = messages[-1].content if messages else "No Task"
     query = State.get("user_query", messages[-1].content if messages else "No Task")
@@ -94,6 +98,21 @@ def TripAgent(State)-> Dict:
     
     decision_next = decision.content.strip().lower()
     #print(f"TripAgent Decision: {decision_next}")
+    
+    # Check if we have missing information from previous agents
+    missing_info = State.get("missing_info")
+    if missing_info:
+        next_agent = "end"
+        TripAgent_message = f"Need more information: {', '.join(missing_info)}"
+
+        return {
+            "messages": [AIMessage(content=TripAgent_message)],
+            "next_agent": next_agent,
+            "current_task": task,
+            "user_query": query,
+            "missing_info": missing_info,
+            "extracted_info": State.get("extracted_info", {})
+        }
     
     # Check if all tasks are complete first
     all_tasks_complete = has_flight and has_hotel and has_weather and has_restaurant and has_activities
@@ -123,6 +142,8 @@ def TripAgent(State)-> Dict:
     else:
         next_agent = "end"
         TripAgent_message = "✅ Trip Agent: All tasks complete, ending workflow."
+    
+
         
     return {
         "messages": [AIMessage(content=TripAgent_message)],
@@ -172,9 +193,9 @@ def FlightAgent(State):
             raise ValueError("No JSON found in LLM response")
         extracted = json.loads(match.group(0))
         #extracted = json.loads(parsed.content)  
-        departure = extracted.get("departure_city_code", "").strip()
-        arrival = extracted.get("arrival_city_code", "").strip()
-        date = extracted.get("travel_date", "")
+        departure = (extracted.get("departure_city_code") or "").strip()
+        arrival = (extracted.get("arrival_city_code") or "").strip()
+        date = extracted.get("travel_date") or ""
         
         # Handle null/empty date
         if date and date.lower() != "null":
@@ -185,6 +206,7 @@ def FlightAgent(State):
         else:
             date = ""
     except Exception as e:
+
         return {
             "messages": [AIMessage(content="⚠️ Could not extract flight info. Please try again.")],
             "next_agent": "end"
@@ -199,10 +221,17 @@ def FlightAgent(State):
         missing.append("date (YYYY-MM-DD)")
 
     if missing:
-        msg = f"✈️ Could you please provide the following information: {', '.join(missing)}?"
+        msg = f"✈️ I need more information to help you with your flight booking. Please provide: {', '.join(missing)}"
+
         return {
             "messages": [AIMessage(content=msg)],
-            "next_agent": "end",  
+            "next_agent": "TripAgent",
+            "missing_info": missing,
+            "extracted_info": {
+                "departure": departure,
+                "arrival": arrival, 
+                "date": date
+            }
         }
     #print(f"Flight Agent: Extracted - Departure: {departure}, Arrival: {arrival}, Date: {date}")
     api_results = get_flights_data(departure, arrival, date)
@@ -330,10 +359,17 @@ def HotelAgent(State):
         missing.append("Checkout date")
 
     if missing:
-        msg = f"✈️ Could you please provide the following information: {', '.join(missing)}?"
+        msg = f"🏨 I need more information to help you with your hotel booking. Please provide: {', '.join(missing)}"
         return {
             "messages": [AIMessage(content=msg)],
-            "next_agent": "end",  
+            "next_agent": "end",
+            "missing_info": missing,
+            "extracted_info": {
+                "city_code": city_code,
+                "checkin_date": checkin_date,
+                "checkout_date": checkout_date,
+                "adults": adults
+            }
         }
     #print(f"Hotel Agent: Extracted - City: {city_code}, Checkin: {checkin_date}, Checkout: {checkout_date}, Adults: {adults}")
     api_results = get_hotels_data(city_code, checkin_date,checkout_date, adults)
